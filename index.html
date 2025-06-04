@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>Esempio Cache JSON</title>
+  <script>
+  async function sha256(str) {
+    const data = new TextEncoder().encode(str);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  async function loadJson() {
+    try {
+      const response = await fetch('data.json');
+      const text = await response.text();
+      const checksum = await sha256(text);
+      const storedChecksum = localStorage.getItem('dataJsonChecksum');
+      if (checksum !== storedChecksum) {
+        localStorage.setItem('dataJson', text);
+        localStorage.setItem('dataJsonChecksum', checksum);
+        console.log('JSON aggiornato dalla rete');
+      } else {
+        console.log('JSON dalla cache');
+      }
+      const jsonData = JSON.parse(localStorage.getItem('dataJson'));
+      console.log('Dati:', jsonData);
+    } catch (err) {
+      console.warn('Errore rete, uso la versione in cache se disponibile', err);
+      const jsonText = localStorage.getItem('dataJson');
+      if (jsonText) {
+        const data = JSON.parse(jsonText);
+        console.log('Dati dalla cache:', data);
+      } else {
+        console.error('Nessun dato in cache');
+      }
+    }
+  }
+
+  window.addEventListener('load', loadJson);
+  </script>
+</head>
+<body>
+  <h1>Esempio Cache JSON</h1>
+  <p>Apri la console per vedere i log.</p>
+</body>
+</html>
